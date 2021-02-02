@@ -23,7 +23,7 @@ from .views import home
 
 urlpatterns = [
     path(r'admin/', admin.site.urls),
-    path(r'^$', home, name='home'),
+    path(r'', home, name='home'),
 ]
 
 if settings.DEBUG:
