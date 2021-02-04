@@ -1,7 +1,13 @@
 from django.shortcuts import render, get_object_or_404
-from django.views.generic import DetailView, ListView
+from django.urls import reverse_lazy
+from django.views.generic import *
 from .models import Tweet
 from django.utils import timezone
+from .forms import TweetModelForm
+from django import forms
+from django.forms.utils import ErrorList
+from .mixins import *
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 # Create your views here.
@@ -29,6 +35,37 @@ class TweetDetailView(DetailView):
         return obj
 
 
+class TweetCreateView(LoginRequiredMixin, FormUserNeededMixin, CreateView):
+    form_class = TweetModelForm
+    #  queryset = Tweet.objects.all()
+    template_name = "tweets/create_view.html"
+    success_url = reverse_lazy('list')
+    """
+    def form_valid(self, form):
+        if self.request.user.is_authenticated:
+            form.instance.user = self.request.user
+            return super(TweetCreateView, self).form_valid(form)
+        else:
+            form._errors[forms.forms.NON_FIELD_ERRORS] = ErrorList(["User must be logged in!"])
+            return self.form_invalid(form)
+    """
+
+
+class TweetUpdateView(UserOwnerMixin, FormUserNeededMixin, UpdateView):
+    form_class = TweetModelForm
+    #  queryset = Tweet.objects.all()
+    template_name = "tweets/update_view.html"
+    success_url = reverse_lazy('list')
+
+    def get_object(self):
+        print(self.kwargs)
+        id = self.kwargs.get("id")
+        print(id)
+        # obj = Tweet.objects.get(id=id)  # GET from database
+        obj = get_object_or_404(Tweet, id=id)  # GET from database
+        return obj
+
+
 def tweet_list_view(request):
     queryset = Tweet.objects.all()
     print(queryset)
@@ -51,12 +88,27 @@ def tweet_detail_view(request, id=None):
 
 
 def tweet_create_view(request):
-    return render(request, "tweets/detail_view.html", {})
+    form = TweetModelForm(request.POST or None)
+    if form.is_valid():
+        instance = form.save(commit=False)
+        instance.user = request.user
+        instance.save()
+
+    context = {
+        "form": form
+    }
+    return render(request, "tweets/create_view.html", context)
 
 
 def tweet_delete_view(request):
-    return render(request, "tweets/detail_view.html", {})
+    context = {
+
+    }
+    return render(request, "tweets/detail_view.html", context)
 
 
 def tweet_update_view(request):
-    return render(request, "tweets/detail_view.html", {})
+    context = {
+
+    }
+    return render(request, "tweets/detail_view.html", context)
